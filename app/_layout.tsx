@@ -1,24 +1,36 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack } from 'expo-router';
+// app/_layout.tsx
+import { Slot } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
+import React from 'react';
 
-import { useColorScheme } from '@/hooks/use-color-scheme';
-
-export const unstable_settings = {
-  anchor: '(tabs)',
-};
+import BannerOffline from '@/components/banner-offline';
+import { GlobalAlertProvider } from '@/components/global-alert-component';
+import ApiProvider from '@/providers/api-provider';
+import { AuthProvider } from '@/providers/auth';
+import SessionExpiryProvider from '@/providers/session-expiry-provider';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <GlobalAlertProvider logoDefault={require('@/assets/images/pame-logo-t.png')}>
+      <AuthProvider>
+        <ApiProvider>
+          <SessionExpiryProvider
+            thresholdSec={30}
+            logo={require('@/assets/images/pame-logo-t.png')}
+          >
+            <SafeAreaProvider>
+              <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
+                <BannerOffline />
+                {/* Renderiza el árbol actual; los grupos se encargan de redirigir */}
+                <Slot />
+                <StatusBar style="auto" />
+              </SafeAreaView>
+            </SafeAreaProvider>
+          </SessionExpiryProvider>
+        </ApiProvider>
+      </AuthProvider>
+    </GlobalAlertProvider>
   );
 }
