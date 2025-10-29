@@ -2,13 +2,13 @@ import { ThemedText } from '@/components/themed-text';
 import { ServerList, type Column, type ServerListHandle } from '@/components/ui/server-list';
 import { useUserPasswordFlow } from '@/components/users/user-password-flow';
 import UserRowActions from '@/components/users/user-row-actions';
+import { useThemeColor } from '@/hooks/use-theme-color';
 import { api } from '@/lib/api';
 import { RoleSafeDTO } from '@/types/auth';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
-import React, { useCallback, useRef, useState } from 'react';
-import { Alert, Pressable, Text, View } from 'react-native';
-
+import React, { useCallback, useMemo, useRef, useState } from 'react';
+import { Alert, Platform, Pressable, StyleSheet, Text, View, useColorScheme } from 'react-native';
 
 type User = {
   id: number;
@@ -32,8 +32,24 @@ export default function UserScreen() {
   const ref = useRef<ServerListHandle>(null);
   const [selected, setSelected] = useState<Set<number | string>>(new Set());
   const [deletingId, setDeletingId] = useState<number | null>(null);
-  const [listReady, setListReady] = useState(false);          // ✅ habilita Exportar cuando la lista ya montó
+  const [listReady, setListReady] = useState(false);
   const router = useRouter();
+
+  // ===== Tokens de tema =====
+  const text    = useThemeColor({}, 'text');
+  const tint    = useThemeColor({}, 'tint');
+  const border  = useThemeColor({}, 'border');
+  const muted   = useThemeColor({}, 'muted');
+  const fieldBg = useThemeColor({}, 'fieldBg');
+  const surface = useThemeColor({}, 'surface');
+
+  const scheme  = useColorScheme();
+  const isDark  = scheme === 'dark';
+  const ripple  = (c: string) => (Platform.OS === 'android' ? { android_ripple: { color: c } } : {});
+
+  // colores semánticos mínimos
+  const success = '#16a34a';
+  const danger  = '#ef4444';
 
   const { openFor, modals } = useUserPasswordFlow({
     onSuccess: () => ref.current?.reload(),
@@ -42,31 +58,33 @@ export default function UserScreen() {
 
   useFocusEffect(useCallback(() => { ref.current?.reload(); }, []));
 
-  const columns: Column<User>[] = [
+  const columns: Column<User>[] = useMemo(() => ([
     {
       key: 'id', header: 'ID', sortable: true, width: 80, align: 'left',
       render: (r) => (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-          <MaterialCommunityIcons name="tag-outline" size={18} color="#6b7280" />
-          <Text style={{ color: '#111827', fontSize: 14 }}>{r.id}</Text>
+          <MaterialCommunityIcons name="tag-outline" size={18} color={muted} />
+          <Text style={{ color: text, fontSize: 14 }}>{r.id}</Text>
         </View>
       ),
     },
     {
       key: 'email', header: 'Email', sortable: true, filter: { type: 'text' },
       render: (r) => (
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-          <MaterialCommunityIcons name="email-outline" size={18} color="#6b7280" />
-          <Text style={{ color: '#111827', fontSize: 14 }} numberOfLines={1} ellipsizeMode="tail">{r.email}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, minWidth: 0, flex: 1 }}>
+          <MaterialCommunityIcons name="email-outline" size={18} color={muted} />
+          <Text style={{ color: text, fontSize: 14, flexShrink: 1 }} numberOfLines={1} ellipsizeMode="tail">
+            {r.email}
+          </Text>
         </View>
       ),
     },
     {
-      key: 'role', header: 'Nombre del Role', sortable: false, align: 'left', filter: { type: 'text' },
+      key: 'role', header: 'Nombre del Rol', sortable: false, align: 'left', filter: { type: 'text' },
       render: (r) => (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-          <MaterialCommunityIcons name="shield-account-outline" size={18} color="#6b7280" />
-          <Text style={{ color: '#111827', fontSize: 14 }}>{r.role.name}</Text>
+          <MaterialCommunityIcons name="shield-account-outline" size={18} color={muted} />
+          <Text style={{ color: text, fontSize: 14 }}>{r.role.name}</Text>
         </View>
       ),
     },
@@ -74,8 +92,12 @@ export default function UserScreen() {
       key: 'status', header: 'Activo', sortable: true, filter: { type: 'boolean' }, align: 'center',
       render: (r) => (
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', gap: 6 }}>
-          <MaterialCommunityIcons name={r.status ? 'account-check' : 'account-off'} size={18} color={r.status ? '#16a34a' : '#ef4444'} />
-          <Text style={{ color: '#111827', fontSize: 14 }}>{r.status ? 'Activo' : 'Inactivo'}</Text>
+          <MaterialCommunityIcons
+            name={r.status ? 'account-check' : 'account-off'}
+            size={18}
+            color={r.status ? success : danger}
+          />
+          <Text style={{ color: text, fontSize: 14 }}>{r.status ? 'Activo' : 'Inactivo'}</Text>
         </View>
       ),
     },
@@ -83,21 +105,21 @@ export default function UserScreen() {
       key: 'createdAt', header: 'Fecha Creación', sortable: true, filter: { type: 'range-date' }, width: 200,
       render: (r) => (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-          <MaterialCommunityIcons name="calendar-clock" size={18} color="#6b7280" />
-          <Text style={{ color: '#111827', fontSize: 14 }}>{formatDateTime(r.createdAt)}</Text>
+          <MaterialCommunityIcons name="calendar-clock" size={18} color={muted} />
+          <Text style={{ color: text, fontSize: 14 }}>{formatDateTime(r.createdAt)}</Text>
         </View>
       ),
     },
     {
-      key: 'updatedAt', header: 'Fecha Modificacion', sortable: true, filter: { type: 'range-date' }, width: 200,
+      key: 'updatedAt', header: 'Fecha Modificación', sortable: true, filter: { type: 'range-date' }, width: 200,
       render: (r) => (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-          <MaterialCommunityIcons name="calendar-clock" size={18} color="#6b7280" />
-          <Text style={{ color: '#111827', fontSize: 14 }}>{formatDateTime(r.updatedAt)}</Text>
+          <MaterialCommunityIcons name="calendar-clock" size={18} color={muted} />
+          <Text style={{ color: text, fontSize: 14 }}>{formatDateTime(r.updatedAt)}</Text>
         </View>
       ),
     },
-  ];
+  ]), [text, muted, success, danger]);
 
   const handleDelete = (row: User) => {
     Alert.alert(
@@ -130,7 +152,6 @@ export default function UserScreen() {
     if (ids.length === 0) return;
 
     try {
-      // Ajusta si tienes endpoint batch. Aquí un fallback con PATCH por usuario.
       await Promise.all(ids.map((id) => apifecth.patch(`/api/v1/admin/user/${id}`, { status })));
       setSelected(new Set());
       ref.current?.reload();
@@ -139,32 +160,69 @@ export default function UserScreen() {
     }
   };
 
-  return (
-    <View style={{ flex: 1, minHeight: 0 }}>
-      {/* Header */}
-      <View style={{ width: '100%', gap: 6, paddingHorizontal: 12, paddingTop: 8, paddingBottom: 4 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-          <View style={{ flexShrink: 1 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <MaterialCommunityIcons name="account-group-outline" size={18} color="#111827" />
-              <ThemedText type="title">Usuarios</ThemedText>
-            </View>
-            <Text style={{ color: '#6b7280', marginTop: 2 }}>Gestiona cuentas, estados y credenciales.</Text>
-          </View>
+  const selectedCount = selected.size;
 
-          <View style={{ flexDirection: 'row', gap: 8, flexShrink: 0 }}>
-            {/* Agregar */}
-            <Pressable
-              onPress={() => router.push('/(admin)/security/users/new' as const)}
-              style={({ pressed }) => [
-                { flexDirection: 'row', alignItems: 'center', gap: 0, backgroundColor: '#2563eb', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 999 },
-                pressed && { opacity: 0.9 },
-              ]}
-              accessibilityRole="button"
-            >
-              <MaterialCommunityIcons name="account-plus-outline" size={18} color="#fff" />
-              <Text style={{ color: '#fff', fontWeight: '700' }}></Text>
-            </Pressable>
+  const headerCardShadow = Platform.select({
+    ios:   { shadowColor: '#000', shadowOpacity: isDark ? 0.25 : 0.08, shadowRadius: 12, shadowOffset: { width: 0, height: 6 } },
+    android: { elevation: isDark ? 8 : 4 },
+    default: { } as any,
+  });
+
+  const ghostBorder = isDark ? 'rgba(255,255,255,0.14)' : border;
+  const ghostBg     = isDark ? 'rgba(255,255,255,0.04)' : 'transparent';
+  const rippleC     = isDark ? '#FFFFFF22' : '#00000022';
+
+  return (
+    <View style={{ flex: 1, minHeight: 0, backgroundColor: surface }}>
+      {/* Header */}
+      <View style={{ width: '100%', paddingHorizontal: 12, paddingTop: 8, paddingBottom: 4 }}>
+        <View
+          style={[
+            {
+              backgroundColor: surface,
+              borderColor: border,
+              borderWidth: StyleSheet.hairlineWidth,
+              borderRadius: 14,
+              padding: 12,
+            },
+            headerCardShadow,
+          ]}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+            <View style={{ flexShrink: 1, minWidth: 0 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <MaterialCommunityIcons name="account-group-outline" size={18} color={text} />
+                <ThemedText type="title">Usuarios</ThemedText>
+              </View>
+              <Text style={{ color: muted, marginTop: 2 }} numberOfLines={1}>
+                Gestiona cuentas, estados y credenciales.
+              </Text>
+            </View>
+
+            <View style={{ flexDirection: 'row', gap: 8, flexShrink: 0 }}>
+
+              {/* Primario (Nuevo) */}
+              <Pressable
+                onPress={() => router.push('/(admin)/security/users/new' as const)}
+                style={({ pressed }) => [
+                  {
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 8,
+                    backgroundColor: tint,
+                    paddingHorizontal: 14,
+                    paddingVertical: 10,
+                    borderRadius: 999,
+                  },
+                  pressed && { opacity: 0.92 },
+                ]}
+                accessibilityRole="button"
+                {...ripple(rippleC)}
+              >
+                <MaterialCommunityIcons name="account-plus-outline" size={18} color="#fff" />
+                <Text style={{ color: '#fff', fontWeight: '700' }}>Nuevo</Text>
+              </Pressable>
+            </View>
           </View>
         </View>
       </View>
@@ -179,60 +237,85 @@ export default function UserScreen() {
         selectable
         selectedKeys={selected}
         onSelectionChange={setSelected}
-        // Acciones masivas dentro del panel de filtros
-        renderBulkActions={({ selectedCount, clearSelection }) => (
-          <View style={{ marginTop: 6, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <MaterialCommunityIcons name="select-multiple" size={18} color="#374151" />
-            <Text style={{ color: '#374151' }}>
-              Seleccionados: <Text style={{ fontWeight: '700' }}>{selectedCount}</Text>
-            </Text>
+        renderBulkActions={({ selectedCount: scFromList, clearSelection }) => {
+          const sc = scFromList ?? selectedCount;
+          const disabled = !sc;
+          const basePill = { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 8 } as const;
 
-            <View style={{ flexDirection: 'row', gap: 8, marginLeft: 8 }}>
-              <Pressable
-                disabled={!selectedCount}
-                onPress={() => handleBulk(true)}
-                style={({ pressed }) => [
-                  { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 8, backgroundColor: !selectedCount ? '#e5e7eb' : '#dcfce7' },
-                  pressed && { opacity: 0.9 },
-                ]}
-              >
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <MaterialCommunityIcons name="account-check-outline" size={16} color={!selectedCount ? '#9ca3af' : '#166534'} />
-                  <Text style={{ color: !selectedCount ? '#9ca3af' : '#166534', fontWeight: '700' }}>Activar</Text>
-                </View>
-              </Pressable>
+          return (
+            <View style={{ marginTop: 6, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <MaterialCommunityIcons name="select-multiple" size={18} color={text} />
+              <Text style={{ color: text }}>
+                Seleccionados: <Text style={{ fontWeight: '700' }}>{sc}</Text>
+              </Text>
 
-              <Pressable
-                disabled={!selectedCount}
-                onPress={() => handleBulk(false)}
-                style={({ pressed }) => [
-                  { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 8, backgroundColor: !selectedCount ? '#e5e7eb' : '#fee2e2' },
-                  pressed && { opacity: 0.9 },
-                ]}
-              >
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <MaterialCommunityIcons name="account-off-outline" size={16} color={!selectedCount ? '#9ca3af' : '#991b1b'} />
-                  <Text style={{ color: !selectedCount ? '#9ca3af' : '#991b1b', fontWeight: '700' }}>Desactivar</Text>
-                </View>
-              </Pressable>
-
-              {!!selectedCount && (
+              <View style={{ flexDirection: 'row', gap: 8, marginLeft: 8 }}>
+                {/* Activar */}
                 <Pressable
-                  onPress={clearSelection}
+                  disabled={disabled}
+                  onPress={() => handleBulk(true)}
                   style={({ pressed }) => [
-                    { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 8, backgroundColor: '#f3f4f6' },
-                    pressed && { opacity: 0.9 },
+                    basePill,
+                    {
+                      backgroundColor: disabled ? fieldBg : (isDark ? 'rgba(22,163,74,0.15)' : '#dcfce7'),
+                      borderWidth: 1,
+                      borderColor: disabled ? border : (isDark ? 'rgba(134,239,172,0.5)' : '#86efac'),
+                    },
+                    pressed && !disabled && { opacity: 0.9 },
                   ]}
+                  {...ripple(rippleC)}
                 >
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <MaterialCommunityIcons name="selection-off" size={16} color="#374151" />
-                    <Text style={{ color: '#374151', fontWeight: '700' }}>Limpiar</Text>
+                    <MaterialCommunityIcons name="account-check-outline" size={16} color={disabled ? muted : (isDark ? '#22c55e' : '#166534')} />
+                    <Text style={{ color: disabled ? muted : (isDark ? '#22c55e' : '#166534'), fontWeight: '700' }}>Activar</Text>
                   </View>
                 </Pressable>
-              )}
+
+                {/* Desactivar */}
+                <Pressable
+                  disabled={disabled}
+                  onPress={() => handleBulk(false)}
+                  style={({ pressed }) => [
+                    basePill,
+                    {
+                      backgroundColor: disabled ? fieldBg : (isDark ? 'rgba(239,68,68,0.15)' : '#fee2e2'),
+                      borderWidth: 1,
+                      borderColor: disabled ? border : (isDark ? 'rgba(254,202,202,0.5)' : '#fecaca'),
+                    },
+                    pressed && !disabled && { opacity: 0.9 },
+                  ]}
+                  {...ripple(rippleC)}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <MaterialCommunityIcons name="account-off-outline" size={16} color={disabled ? muted : (isDark ? '#ef4444' : '#991b1b')} />
+                    <Text style={{ color: disabled ? muted : (isDark ? '#ef4444' : '#991b1b'), fontWeight: '700' }}>Desactivar</Text>
+                  </View>
+                </Pressable>
+
+                {!!sc && (
+                  <Pressable
+                    onPress={clearSelection}
+                    style={({ pressed }) => [
+                      basePill,
+                      {
+                        backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : surface,
+                        borderWidth: 1,
+                        borderColor: ghostBorder,
+                      },
+                      pressed && { opacity: 0.92 },
+                    ]}
+                    {...ripple(rippleC)}
+                  >
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <MaterialCommunityIcons name="selection-off" size={16} color={text} />
+                      <Text style={{ color: text, fontWeight: '700' }}>Limpiar</Text>
+                    </View>
+                  </Pressable>
+                )}
+              </View>
             </View>
-          </View>
-        )}
+          );
+        }}
         renderRowActions={(row) => (
           <UserRowActions
             user={row}
@@ -243,7 +326,7 @@ export default function UserScreen() {
           />
         )}
         onQueryChange={(q) => {
-          if (!listReady) setListReady(true); // ✅ lista lista → habilita Exportar
+          if (!listReady) setListReady(true);
           console.log('Query cambió', q);
         }}
       />

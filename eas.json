@@ -1,0 +1,32 @@
+{
+  "cli": { "version": ">= 12.0.0" },
+  "build": {
+    "sideload-apk": {
+      "distribution": "internal",
+      "env": {
+        "APP_ENV": "development",
+        "API_URL": "http://10.0.29.7:4000/"
+      },
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "production-play": {
+      "distribution": "store",
+      "env": {
+        "APP_ENV": "production",
+        "API_URL": "https://api.example.com"
+      }
+    }
+  },
+  "submit": {
+    "production": {
+      "android": {
+        "serviceAccountKeyPath": "./credentials/google-play-service-account.json",
+        "track": "production",
+        "releaseStatus": "completed",
+        "changesNotSentForReview": false
+      }
+    }
+  }
+}

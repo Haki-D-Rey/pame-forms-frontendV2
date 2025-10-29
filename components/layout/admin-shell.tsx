@@ -1,3 +1,4 @@
+// components/admin/AdminShell.tsx
 import { useGlobalAlert } from '@/components/global-alert-component';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useAuth } from '@/providers/auth';
@@ -16,6 +17,7 @@ import {
   StyleSheet,
   Text,
   View,
+  useColorScheme,
   useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -26,7 +28,7 @@ const NAV = [
   {
     section: 'Dashboard',
     items: [
-      { label: 'Home', icon: 'home-outline', href: '/(admin)/dashboard/home' },
+      { label: 'Inicio', icon: 'home-outline', href: '/(admin)/dashboard/home' },
       { label: 'Formulario', icon: 'file-document-edit-outline', href: '/(admin)/dashboard/form' },
       { label: 'Reportes', icon: 'chart-box-outline', href: '/(admin)/dashboard/reporte' },
     ],
@@ -34,9 +36,9 @@ const NAV = [
   {
     section: 'Security',
     items: [
-      { label: 'Users', icon: 'account-multiple-outline', href: '/(admin)/security/users' },
+      { label: 'Usuarios', icon: 'account-multiple-outline', href: '/(admin)/security/users' },
       { label: 'Roles', icon: 'shield-account-outline', href: '/(admin)/security/roles' },
-      { label: 'Permissions', icon: 'key-outline', href: '/(admin)/security/permissions' },
+      { label: 'Permisos', icon: 'key-outline', href: '/(admin)/security/permissions' },
     ],
   },
 ] as const;
@@ -60,14 +62,34 @@ export default function AdminShell({ children }: Props) {
   const pathname = usePathname();
   const { signOut, user } = useAuth();
 
-  const bg = useThemeColor({}, 'background');
+  // ===== Tokens de tema centralizados =====
   const text = useThemeColor({}, 'text');
+  const bg = useThemeColor({}, 'background');
+  const primary = useThemeColor({}, 'primary');
+  const muted = useThemeColor({}, 'muted');
+  const surface = useThemeColor({}, 'surface');
+  const border = useThemeColor({}, 'border');
+  const fieldBg = useThemeColor({}, 'fieldBg');
+  const fieldBorder = useThemeColor({}, 'fieldBorder');
   const tint = useThemeColor({}, 'tint');
+
+  const scheme = useColorScheme();
+  const isDark = scheme === 'dark';
+
+  const styles = useMemo(
+    () =>
+      createStyles({
+        text, bg, primary, muted, surface, border, fieldBg, fieldBorder, tint,
+      }),
+    [text, bg, primary, muted, surface, border, fieldBg, fieldBorder, tint]
+  );
+
+  // Ripple helper
+  const ripple = (c: string) => (Platform.OS === 'android' ? { android_ripple: { color: c } } : {});
 
   const [open, setOpen] = useState(false);
   const [footerH, setFooterH] = useState(0);
   const { show } = useGlobalAlert();
-
 
   const awaitAlert = async (opts: {
     type: 'success' | 'error';
@@ -80,7 +102,6 @@ export default function AdminShell({ children }: Props) {
     show({ ...opts, duration });
     await sleep(duration + 350);
   };
-
 
   // Drawer (RN Animated)
   const animX = useRef(new RNAnimated.Value(-DRAWER_W)).current;
@@ -169,7 +190,8 @@ export default function AdminShell({ children }: Props) {
       {/* Fondo */}
       <View style={[StyleSheet.absoluteFill, { backgroundColor: bg }]} />
 
-      <StatusBar barStyle={Platform.OS === 'android' ? 'light-content' : 'dark-content'} />
+      {/* StatusBar acorde a tema */}
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
 
       {/* Header fijo */}
       <View
@@ -178,8 +200,8 @@ export default function AdminShell({ children }: Props) {
           {
             height: HEADER_H + insets.top,
             paddingTop: insets.top,
-            borderColor: '#00000012',
-            backgroundColor: bg,
+            backgroundColor: surface,
+            borderColor: border,
           },
         ]}
         pointerEvents="box-none"
@@ -188,7 +210,7 @@ export default function AdminShell({ children }: Props) {
           onPress={isMd ? undefined : toggleSidebar}
           style={[styles.iconBtn, { padding: 2 }]}
           accessibilityRole="button"
-          {...(Platform.OS === 'android' ? { android_ripple: { color: '#00000014' } } : {})}
+          {...ripple(`${text}14`)}
         >
           {!isMd && <MaterialCommunityIcons name="menu" size={28} color={text} />}
         </Pressable>
@@ -199,10 +221,10 @@ export default function AdminShell({ children }: Props) {
         </View>
 
         <View style={styles.actionsRight}>
-          <Pressable style={styles.actionPill} accessibilityRole="button" {...(Platform.OS === 'android' ? { android_ripple: { color: '#00000010' } } : {})}>
+          <Pressable style={styles.actionPill} accessibilityRole="button" {...ripple(`${text}12`)}>
             <MaterialCommunityIcons name="bell-outline" size={18} color={text} />
           </Pressable>
-          <Pressable style={[styles.actionPill, { marginLeft: 6 }]} accessibilityRole="button" {...(Platform.OS === 'android' ? { android_ripple: { color: '#00000010' } } : {})}>
+          <Pressable style={[styles.actionPill, { marginLeft: 6 }]} accessibilityRole="button" {...ripple(`${text}12`)}>
             <MaterialCommunityIcons name="account-circle-outline" size={20} color={text} />
           </Pressable>
         </View>
@@ -234,25 +256,22 @@ export default function AdminShell({ children }: Props) {
             {
               top: topOffset,
               width: RAIL_W,
-              backgroundColor: Platform.select({
-                ios: 'rgba(250,250,250,1)',
-                android: 'rgba(250,250,250,1)',
-                default: 'rgba(250,250,250,0.98)',
-              }),
+              backgroundColor: surface,
+              borderRightColor: border,
             },
           ]}
           pointerEvents="auto"
         >
           <View style={{ flex: 1, minHeight: 0 }}>
             <SidebarContent
-              text={text}
-              tint={tint}
+              tokens={{ text, tint, primary, muted, border, fieldBg }}
               isActive={isActive}
               onNavigate={navigateFromMenu}
               userEmail={user?.email}
+              ripple={ripple}
               onSignOut={async () => {
                 await signOut();
-                router.replace('/auth/login' as const);
+                router.replace('/(auth)/auth/login' as const);
               }}
             />
           </View>
@@ -267,11 +286,7 @@ export default function AdminShell({ children }: Props) {
               pointerEvents="auto"
               style={[styles.backdrop, { top: topOffset, opacity: backdrop, zIndex: 30 }]}
             >
-              <Pressable
-                onPress={() => hideSidebar()}
-                style={StyleSheet.absoluteFill}
-                {...(Platform.OS === 'android' ? { android_ripple: { color: '#00000033' } } : {})}
-              />
+              <Pressable onPress={() => hideSidebar()} style={StyleSheet.absoluteFill} {...ripple('#00000033')} />
             </RNAnimated.View>
           )}
 
@@ -283,33 +298,30 @@ export default function AdminShell({ children }: Props) {
                 top: topOffset,
                 width: DRAWER_W,
                 transform: [{ translateX: animX }],
-                backgroundColor: Platform.select({
-                  ios: 'rgba(250,250,250,1)',
-                  android: 'rgba(250,250,250,1)',
-                  default: 'rgba(255,255,255,0.98)',
-                }),
+                backgroundColor: surface,
+                borderRightColor: border,
                 zIndex: 31,
               },
             ]}
           >
             <View style={{ flex: 1, minHeight: 0 }}>
-              <View style={[styles.drawerHeader, { flexShrink: 0 }]}>
+              <View style={[styles.drawerHeader, { flexShrink: 0, borderBottomColor: border }]}>
                 <View style={styles.logoRow}>
                   <Image source={require('@/assets/images/pame-logo-t.png')} style={{ width: 22, height: 22, marginRight: 8 }} resizeMode="contain" />
                   <Text style={[styles.sidebarTitle, { color: text }]}>Pame Admin</Text>
                 </View>
-                <Pressable onPress={() => hideSidebar()} style={styles.iconBtn} accessibilityRole="button" {...(Platform.OS === 'android' ? { android_ripple: { color: '#00000010' } } : {})}>
+                <Pressable onPress={() => hideSidebar()} style={styles.iconBtn} accessibilityRole="button" {...ripple(`${text}12`)}>
                   <MaterialCommunityIcons name="close" size={20} color={text} />
                 </Pressable>
               </View>
 
               <View style={{ flex: 1, minHeight: 0 }}>
                 <SidebarContent
-                  text={text}
-                  tint={tint}
+                  tokens={{ text, tint, primary, muted, border, fieldBg }}
                   isActive={isActive}
                   onNavigate={navigateFromMenu}
                   userEmail={user?.email}
+                  ripple={ripple}
                   onSignOut={async () => {
                     await signOut();
                     await awaitAlert({
@@ -320,8 +332,9 @@ export default function AdminShell({ children }: Props) {
                       logo: require('@/assets/images/pame-logo-t.png'),
                     });
                     await sleep(1000);
-                    router.replace('/auth/login' as const);
+                    router.replace('/(auth)/auth/login' as const);
                   }}
+                  stylesGlobal={styles}
                 />
               </View>
             </View>
@@ -329,27 +342,38 @@ export default function AdminShell({ children }: Props) {
         </>
       )}
 
-      {/* Footer medible (si lo agregas luego) */}
+      {/* Footer medible (placeholder si lo agregas luego) */}
       <View onLayout={() => setFooterH(0)} style={{ height: 0 }} />
     </SafeAreaView>
   );
 }
 
 function SidebarContent({
-  text,
-  tint,
+  tokens,
   isActive,
   onNavigate,
   userEmail,
   onSignOut,
+  ripple,
+  stylesGlobal
 }: {
-  text: string;
-  tint: string;
+  tokens: { text: string; tint: string; primary: string; muted: string; border: string; fieldBg: string };
   isActive: (href: string) => boolean;
   onNavigate: (href: string) => void;
   userEmail?: string | null;
   onSignOut: () => Promise<void>;
+  ripple: (c: string) => any;
+  stylesGlobal?: any
 }) {
+  const { text, tint, primary, muted, border, fieldBg } = tokens;
+  const styles = stylesGlobal;
+  const scheme = useColorScheme();
+  const isDark = scheme === 'dark';
+
+  // Ajuste: en light forzamos fondos claros para secciones e ítems
+  const sectionBg = isDark ? fieldBg : '#FFFFFF';
+  const itemBg = isDark ? fieldBg : '#FFFFFF';
+
   const avatarLetter = useMemo(() => (userEmail ? userEmail[0].toUpperCase() : 'U'), [userEmail]);
   const initialExpanded = useMemo(
     () => NAV.reduce((acc, sec) => ((acc[sec.section] = true), acc), {} as Record<string, boolean>),
@@ -375,12 +399,13 @@ function SidebarContent({
                 onPress={() => setExpanded((p) => ({ ...p, [sec.section]: !open }))}
                 style={[
                   styles.sectionHeader,
+                  { backgroundColor: sectionBg, borderColor: border },
                   anyActive && { backgroundColor: `${tint}10`, borderColor: `${tint}55` },
                 ]}
                 accessibilityRole="button"
-                {...(Platform.OS === 'android' ? { android_ripple: { color: '#00000014' } } : {})}
+                {...ripple(`${text}12`)}
               >
-                <View style={[styles.leftAccent, anyActive && { backgroundColor: tint, opacity: 0.9 }]} />
+                <View style={[styles.leftAccent, { backgroundColor: anyActive ? tint : border }]} />
                 <Text style={[styles.sectionTitle, { color: text }]} numberOfLines={1}>
                   {sec.section}
                 </Text>
@@ -396,11 +421,12 @@ function SidebarContent({
                       onPress={() => onNavigate(item.href)}
                       style={({ pressed }) => [
                         styles.navItem,
+                        { backgroundColor: itemBg, borderColor: 'transparent' },
                         active && { backgroundColor: `${tint}14`, borderColor: `${tint}55` },
                         pressed && { opacity: 0.9 },
                       ]}
                       accessibilityRole="button"
-                      {...(Platform.OS === 'android' ? { android_ripple: { color: '#00000010' } } : {})}
+                      {...ripple(`${text}10`)}
                     >
                       <View style={[styles.itemLeftMarker, active && { backgroundColor: tint }]} />
                       <View style={styles.iconCell}>
@@ -417,147 +443,175 @@ function SidebarContent({
         })}
       </ScrollView>
 
-      <View style={[styles.sidebarFooter, { borderTopColor: '#00000010' }]}>
-        <View style={styles.avatar}>
-          <Text style={{ color: '#fff', fontWeight: '700' }}>{avatarLetter}</Text>
+      <View style={[styles.sidebarFooter, { borderTopColor: border, paddingVertical: 10 }]}>
+        {/* Izquierda: Avatar + info */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }}>
+          <View style={[styles.avatar, { backgroundColor: tint }]}>
+            <Text style={{ color: '#fff', fontWeight: '700' }}>{avatarLetter}</Text>
+          </View>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text style={{ fontSize: 12, color: text }} numberOfLines={1} ellipsizeMode="tail">
+              {userEmail ?? 'user@example.com'}
+            </Text>
+            <Text style={{ fontSize: 11, color: muted }} numberOfLines={1} ellipsizeMode="tail">
+              Sesión activa
+            </Text>
+          </View>
         </View>
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <Text style={{ fontSize: 12, color: text }} numberOfLines={1}>
-            {userEmail ?? 'user@example.com'}
-          </Text>
-          <Pressable onPress={onSignOut} accessibilityRole="button">
-            <Text style={{ color: '#ef4444', fontWeight: '600' }}>Cerrar sesión</Text>
-          </Pressable>
-        </View>
+
+        {/* Derecha: botón pill cerrar sesión */}
+        <Pressable
+          onPress={onSignOut}
+          accessibilityRole="button"
+          style={({ pressed }) => [
+            {
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 0,
+              paddingHorizontal: 8,
+              paddingVertical: 8,
+              borderRadius: 5,
+              backgroundColor: 'rgba(239,68,68,0.12)',
+              borderWidth: 1,
+              borderColor: 'rgba(254,202,202,0.6)',
+            },
+            pressed && { opacity: 0.9 },
+          ]}
+          {...ripple('#00000022')}
+        >
+          <MaterialCommunityIcons name="logout-variant" size={16} color="#ef4444" />
+        </Pressable>
       </View>
+
+
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1 },
 
-  header: {
-    position: 'absolute',
-    top: 0, left: 0, right: 0,
-    paddingHorizontal: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    zIndex: 40,
-  },
+function createStyles(c: {
+  text: string; bg: string; primary: string; muted: string; surface: string; border: string; fieldBg: string; fieldBorder: string; tint: string;
+}) {
+  return StyleSheet.create({
+    safe: { flex: 1 },
 
-  // Contenedor principal absoluto del main
-  mainAbs: {
-    position: 'absolute',
-    right: 0,
-    bottom: 0,
-    padding: 12,
-    zIndex: 10,
-  },
+    header: {
+      position: 'absolute',
+      top: 0, left: 0, right: 0,
+      paddingHorizontal: 12,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      zIndex: 40,
+    },
 
-  content: {
-    flex: 1,
-    minHeight: 0,
-    minWidth: 0,
-  },
+    // Contenedor principal absoluto del main
+    mainAbs: {
+      position: 'absolute',
+      right: 0,
+      bottom: 0,
+      padding: 12,
+      zIndex: 10,
+    },
 
-  actionsRight: { flexDirection: 'row', alignItems: 'center' },
-  actionPill: { height: 34, width: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  iconBtn: { height: 34, width: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  brandWrap: { flexDirection: 'row', alignItems: 'center' },
-  brand: { fontSize: 15, fontWeight: '800', letterSpacing: 0.2 },
+    content: {
+      flex: 1,
+      minHeight: 0,
+      minWidth: 0,
+    },
 
-  rail: {
-    position: 'absolute',
-    left: 0, bottom: 0,
-    borderRightWidth: StyleSheet.hairlineWidth,
-    borderRightColor: '#00000012',
-    flexDirection: 'column',
-    minHeight: 0,
-    zIndex: 30,
-    ...Platform.select({
-      ios: { shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 12, shadowOffset: { width: 0, height: 6 } },
-      android: { elevation: 6 },
-      default: { /* web shadow */ } as any,
-    }),
-  },
+    actionsRight: { flexDirection: 'row', alignItems: 'center' },
+    actionPill: { height: 34, width: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+    iconBtn: { height: 34, width: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+    brandWrap: { flexDirection: 'row', alignItems: 'center' },
+    brand: { fontSize: 15, fontWeight: '800', letterSpacing: 0.2 },
 
-  drawer: {
-    position: 'absolute',
-    left: 0, bottom: 0,
-    borderRightWidth: StyleSheet.hairlineWidth,
-    borderRightColor: '#00000012',
-    borderTopRightRadius: 16,
-    flexDirection: 'column',
-    minHeight: 0,
-    ...Platform.select({
-      ios: { shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 18, shadowOffset: { width: 0, height: 10 } },
-      android: { elevation: 12 },
-      default: { /* web shadow */ } as any,
-    }),
-  },
+    rail: {
+      position: 'absolute',
+      left: 0, bottom: 0,
+      borderRightWidth: StyleSheet.hairlineWidth,
+      flexDirection: 'column',
+      minHeight: 0,
+      zIndex: 30,
+      ...Platform.select({
+        ios: { shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 12, shadowOffset: { width: 0, height: 6 } },
+        android: { elevation: 6 },
+        default: {},
+      }),
+    },
 
-  drawerHeader: {
-    height: 52,
-    paddingHorizontal: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#00000010',
-  },
+    drawer: {
+      position: 'absolute',
+      left: 0, bottom: 0,
+      borderRightWidth: StyleSheet.hairlineWidth,
+      borderTopRightRadius: 16,
+      flexDirection: 'column',
+      minHeight: 0,
+      ...Platform.select({
+        ios: { shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 18, shadowOffset: { width: 0, height: 10 } },
+        android: { elevation: 12 },
+        default: {},
+      }),
+    },
 
-  backdrop: {
-    position: 'absolute',
-    left: 0, right: 0, bottom: 0,
-    backgroundColor: '#0f172a99',
-  },
+    drawerHeader: {
+      height: 52,
+      paddingHorizontal: 12,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      borderBottomWidth: StyleSheet.hairlineWidth,
+    },
 
-  logoRow: { flexDirection: 'row', alignItems: 'center' },
-  sidebarTitle: { fontSize: 15, fontWeight: '800' },
+    backdrop: {
+      position: 'absolute',
+      left: 0, right: 0, bottom: 0,
+      backgroundColor: '#0f172a99',
+    },
 
-  sidebarContentWrap: { flex: 1, minHeight: 0 },
-  navItem: {
-    height: 46, minHeight: 46, maxHeight: 46,
-    position: 'relative',
-    borderRadius: 12,
-    paddingRight: 12, paddingLeft: 12,
-    alignItems: 'center', flexDirection: 'row',
-    marginBottom: 6,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'transparent',
-    overflow: 'hidden',
-  },
-  iconCell: { width: 28, alignItems: 'center', justifyContent: 'center', marginRight: 8 },
-  navLabel: { fontSize: 15, fontWeight: '600' },
-  sidebarFooter: {
-    paddingHorizontal: 12, paddingVertical: 12,
-    borderTopWidth: StyleSheet.hairlineWidth, flexDirection: 'row', alignItems: 'center',
-  },
-  avatar: {
-    width: 32, height: 32, borderRadius: 999, backgroundColor: '#475569',
-    alignItems: 'center', justifyContent: 'center', marginRight: 10,
-  },
+    logoRow: { flexDirection: 'row', alignItems: 'center' },
+    sidebarTitle: { fontSize: 15, fontWeight: '800' },
 
-  sectionHeader: {
-    height: 36, borderRadius: 12, paddingHorizontal: 10,
-    borderWidth: StyleSheet.hairlineWidth, borderColor: '#00000018',
-    flexDirection: 'row', alignItems: 'center',
-    marginBottom: 6, backgroundColor: '#f1f5f9',
-  },
-  sectionTitle: {
-    flex: 1, fontSize: 11, fontWeight: '800', letterSpacing: 0.3,
-    textTransform: 'uppercase', opacity: 0.9,
-  },
-  leftAccent: {
-    width: 4, height: 18, borderRadius: 3, marginRight: 8,
-    backgroundColor: '#cbd5e1',
-  },
-  itemLeftMarker: {
-    position: 'absolute', left: 0, top: 0, bottom: 0, width: 3,
-    borderTopLeftRadius: 12, borderBottomLeftRadius: 12,
-    backgroundColor: 'transparent',
-  },
-});
+    sidebarContentWrap: { flex: 1, minHeight: 0 },
+    navItem: {
+      height: 46, minHeight: 46, maxHeight: 46,
+      position: 'relative',
+      borderRadius: 12,
+      paddingRight: 12, paddingLeft: 12,
+      alignItems: 'center', flexDirection: 'row',
+      marginBottom: 6,
+      borderWidth: StyleSheet.hairlineWidth,
+      overflow: 'hidden',
+    },
+    iconCell: { width: 28, alignItems: 'center', justifyContent: 'center', marginRight: 8 },
+    navLabel: { fontSize: 15, fontWeight: '600' },
+    sidebarFooter: {
+      paddingHorizontal: 12, paddingVertical: 12,
+      borderTopWidth: StyleSheet.hairlineWidth, flexDirection: 'row', alignItems: 'center',
+    },
+    avatar: {
+      width: 32, height: 32, borderRadius: 999,
+      alignItems: 'center', justifyContent: 'center', marginRight: 10,
+    },
+
+    sectionHeader: {
+      height: 36, borderRadius: 12, paddingHorizontal: 10,
+      borderWidth: StyleSheet.hairlineWidth,
+      flexDirection: 'row', alignItems: 'center',
+      marginBottom: 6,
+    },
+    sectionTitle: {
+      flex: 1, fontSize: 11, fontWeight: '800', letterSpacing: 0.3,
+      textTransform: 'uppercase', opacity: 0.9,
+    },
+    leftAccent: {
+      width: 4, height: 18, borderRadius: 3, marginRight: 8,
+    },
+    itemLeftMarker: {
+      position: 'absolute', left: 0, top: 0, bottom: 0, width: 3,
+      borderTopLeftRadius: 12, borderBottomLeftRadius: 12,
+      backgroundColor: 'transparent',
+    },
+  });
+}

@@ -8,19 +8,19 @@ import { useThemeColor } from '@/hooks/use-theme-color';
 import { useAuth } from '@/providers/auth';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Link, useRouter } from 'expo-router';
+import { Link } from 'expo-router';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import {
-    ActivityIndicator,
-    Animated,
-    Image,
-    KeyboardAvoidingView,
-    Platform,
-    Pressable,
-    StyleSheet,
-    TextInput,
-    View,
+  ActivityIndicator,
+  Animated,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  StyleSheet,
+  TextInput,
+  View,
 } from 'react-native';
 import { z } from 'zod';
 
@@ -33,24 +33,47 @@ type LoginForm = z.infer<typeof LoginSchema>;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export default function LoginScreen() {
-  const router = useRouter();
   const { signIn } = useAuth();
 
-  // Tema
-  const textColor = useThemeColor({}, 'text');
-  const bgColor = useThemeColor({}, 'background');
-  const tint = useThemeColor({}, 'tint');
-  const muted = useMemo(() => (Platform.OS === 'ios' ? '#8E8E93' : '#9AA0A6'), []);
+  // === Tokens de tema centralizados ===
+  const text        = useThemeColor({}, 'text');
+  const bg          = useThemeColor({}, 'background');
+  const primary     = useThemeColor({}, 'primary');
+  const muted       = useThemeColor({}, 'muted');
+  const surface     = useThemeColor({}, 'surface');
+  const border      = useThemeColor({}, 'border');
+  const fieldBg     = useThemeColor({}, 'fieldBg');
+  const fieldBorder = useThemeColor({}, 'fieldBorder');
+  const placeholder = useThemeColor({}, 'placeholder');
+  const errorColor  = useThemeColor({}, 'error');
+  const disabled    = useThemeColor({}, 'disabled');
+  const tint        = useThemeColor({}, 'tint');
+
   const scheme = useColorScheme();
   const logoSource =
     scheme === 'dark'
       ? require('@/assets/images/pame-logo-t.png')
       : require('@/assets/images/pame-logo-t.png');
 
-  const [focus, setFocus] = useState<{ email: boolean; password: boolean }>({
-    email: false,
-    password: false,
-  });
+  const styles = useMemo(
+    () =>
+      createStyles({
+        text,
+        bg,
+        primary,
+        muted,
+        surface,
+        border,
+        fieldBg,
+        fieldBorder,
+        placeholder,
+        errorColor,
+        disabled,
+      }),
+    [text, bg, primary, muted, surface, border, fieldBg, fieldBorder, placeholder, errorColor, disabled]
+  );
+
+  const [focus, setFocus] = useState<{ email: boolean; password: boolean }>({ email: false, password: false });
   const [postLogin, setPostLogin] = useState(false);
   const { show } = useGlobalAlert();
 
@@ -151,15 +174,14 @@ export default function LoginScreen() {
         logo: require('@/assets/images/pame-logo-t.png'),
       });
       await sleep(1000);
-    //   router.replace('/(admin)/dashboard/home');
+      // router.replace('/(admin)/dashboard/home');
     } catch {
       setPostLogin(false);
       clearForm();
       await awaitAlert({
         type: 'error',
         title: 'Credenciales Incorrectas',
-        message:
-          'No se pudo iniciar sesión. Verifica tus credenciales e intenta nuevamente',
+        message: 'No se pudo iniciar sesión. Verifica tus credenciales e intenta nuevamente',
         duration: 2000,
         logo: require('@/assets/images/pame-logo-t.png'),
       });
@@ -168,7 +190,7 @@ export default function LoginScreen() {
 
   return (
     <>
-      <ThemedView style={[styles.container, { backgroundColor: bgColor }]}>
+      <ThemedView style={styles.container}>
         {/* Decorativos: blobs */}
         <Animated.View style={[styles.blobWrap, { opacity: fadeIn }]}>
           <View style={[styles.blob, { backgroundColor: tint + '22', top: -60, right: -40 }]} />
@@ -201,19 +223,15 @@ export default function LoginScreen() {
           <Animated.View
             style={[styles.header, { opacity: fadeIn2, transform: [{ translateY: slideUp2 }] }]}
           >
-            <ThemedText style={[styles.brand, { color: textColor }]}>
-              Gestión de Formularios
-            </ThemedText>
-            <ThemedText style={[styles.subtitle, { color: textColor }]}>
-              Accede a tu panel corporativo
-            </ThemedText>
+            <ThemedText style={styles.brand}>Gestión de Formularios</ThemedText>
+            <ThemedText style={styles.subtitle}>Accede a tu panel corporativo</ThemedText>
           </Animated.View>
 
           {/* Card */}
           <Animated.View
             style={[
               styles.card,
-              { backgroundColor: bgColor, opacity: fadeIn2, transform: [{ translateY: slideUp2 }] },
+              { opacity: fadeIn2, transform: [{ translateY: slideUp2 }] },
             ]}
           >
             {/* Email */}
@@ -232,7 +250,7 @@ export default function LoginScreen() {
                     }}
                     onFocus={() => setFocus((s) => ({ ...s, email: true }))}
                     placeholder="Correo electrónico"
-                    placeholderTextColor={muted}
+                    placeholderTextColor={placeholder}
                     keyboardType="email-address"
                     autoCapitalize="none"
                     autoCorrect={false}
@@ -240,7 +258,7 @@ export default function LoginScreen() {
                     textContentType="emailAddress"
                     returnKeyType="next"
                     onSubmitEditing={() => passwordRef.current?.focus()}
-                    style={[styles.input, { color: textColor }]}
+                    style={styles.input}
                     clearButtonMode="while-editing"
                   />
                 )}
@@ -264,13 +282,13 @@ export default function LoginScreen() {
                     }}
                     onFocus={() => setFocus((s) => ({ ...s, password: true }))}
                     placeholder="Contraseña"
-                    placeholderTextColor={muted}
+                    placeholderTextColor={placeholder}
                     secureTextEntry={!showPass}
                     autoComplete="password"
                     textContentType="password"
                     returnKeyType="go"
                     onSubmitEditing={handleSubmit(onSubmit)}
-                    style={[styles.input, { color: textColor, paddingRight: 44 }]}
+                    style={[styles.input, { paddingRight: 44 }]}
                   />
                 )}
               />
@@ -285,7 +303,7 @@ export default function LoginScreen() {
                 <MaterialCommunityIcons
                   name={showPass ? 'eye-off-outline' : 'eye-outline'}
                   size={20}
-                  color="#64748b"
+                  color={muted}
                 />
               </Pressable>
             </View>
@@ -301,7 +319,7 @@ export default function LoginScreen() {
                 accessibilityRole="button"
                 style={[
                   styles.primaryButton,
-                  { backgroundColor: isValid && !isSubmitting ? tint : '#9CA3AF' },
+                  { backgroundColor: isValid && !isSubmitting ? primary : disabled },
                 ]}
                 onPress={handleSubmit(onSubmit)}
                 disabled={!isValid || isSubmitting}
@@ -332,7 +350,7 @@ export default function LoginScreen() {
 
           {/* Footer */}
           <Animated.View style={[styles.footer, { opacity: fadeFooter }]}>
-            <ThemedText style={[styles.footerText, { color: textColor }]}>
+            <ThemedText style={styles.footerText}>
               © {new Date().getFullYear()} Pame S.A
             </ThemedText>
           </Animated.View>
@@ -354,94 +372,99 @@ export default function LoginScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: 20, justifyContent: 'center' },
-  kav: { width: '100%', maxWidth: 520, alignSelf: 'center' },
+function createStyles(c: {
+  text: string; bg: string; primary: string; muted: string; surface: string; border: string;
+  fieldBg: string; fieldBorder: string; placeholder: string; errorColor: string; disabled: string;
+}) {
+  return StyleSheet.create({
+    container: { flex: 1, paddingHorizontal: 20, justifyContent: 'center', backgroundColor: c.bg },
+    kav: { width: '100%', maxWidth: 520, alignSelf: 'center' },
 
-  header: { marginBottom: 18, alignItems: 'center' },
-  brand: { fontSize: 26, fontWeight: '800', letterSpacing: 0.4 },
-  subtitle: { fontSize: 14, opacity: 0.8, marginTop: 4 },
+    header: { marginBottom: 18, alignItems: 'center' },
+    brand: { fontSize: 26, fontWeight: '800', letterSpacing: 0.4, color: c.text },
+    subtitle: { fontSize: 14, opacity: 0.8, marginTop: 4, color: c.text },
 
-  card: {
-    borderRadius: 20,
-    padding: 18,
-    shadowColor: '#000',
-    shadowOpacity: 0.12,
-    shadowOffset: { width: 0, height: 8 },
-    shadowRadius: 16,
-    elevation: 10,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#ffffff22',
-    // backdropFilter es solo web. Si lo usas, déjalo en el componente web.
-    // backdropFilter: 'blur(4px)' as any,
-  },
+    card: {
+      borderRadius: 20,
+      padding: 18,
+      backgroundColor: c.surface,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: c.border,
+      shadowColor: '#000',
+      shadowOpacity: 0.18,
+      shadowOffset: { width: 0, height: 8 },
+      shadowRadius: 12,
+      elevation: 6,
+    },
 
-  field: {
-    height: 50,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#00000014',
-    backgroundColor: '#00000008',
-    marginBottom: 8,
-  },
-  fieldWrap: {
-    position: 'relative',
-    borderWidth: 1,
-    borderColor: '#00000022',
-    borderRadius: 12,
-    marginBottom: 8,
-    backgroundColor: '#F8FAFC',
-  },
-  input: {
-    height: 52,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-  },
-  rightAdornment: {
-    position: 'absolute',
-    right: 8,
-    top: 0,
-    height: 52,
-    width: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  errorText: { color: '#ef4444', marginBottom: 8, fontSize: 13 },
+    field: {
+      height: 50,
+      borderRadius: 12,
+      paddingHorizontal: 12,
+      justifyContent: 'center',
+      borderWidth: 1,
+      borderColor: c.fieldBorder,
+      backgroundColor: c.fieldBg,
+      marginBottom: 8,
+    },
+    fieldWrap: {
+      position: 'relative',
+      borderWidth: 1,
+      borderColor: c.fieldBorder,
+      borderRadius: 12,
+      marginBottom: 8,
+      backgroundColor: c.fieldBg,
+    },
+    input: {
+      height: 52,
+      borderRadius: 12,
+      paddingHorizontal: 12,
+      color: c.text,
+    },
+    rightAdornment: {
+      position: 'absolute',
+      right: 8,
+      top: 0,
+      height: 52,
+      width: 36,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    errorText: { color: c.errorColor, marginBottom: 8, fontSize: 13 },
 
-  primaryButton: {
-    height: 50,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 10,
-  },
-  primaryButtonText: { color: '#fff', fontWeight: '700', fontSize: 16 },
+    primaryButton: {
+      height: 50,
+      borderRadius: 12,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginTop: 10,
+      backgroundColor: c.primary,
+    },
+    primaryButtonText: { color: '#fff', fontWeight: '700', fontSize: 16 },
 
-  secondaryRow: {
-    marginTop: 14,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 12,
-    flexWrap: 'wrap',
-  },
-  link: { paddingVertical: 6 },
-  linkText: { textDecorationLine: 'underline', fontWeight: '600' },
+    secondaryRow: {
+      marginTop: 14,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      gap: 12,
+      flexWrap: 'wrap',
+    },
+    link: { paddingVertical: 6 },
+    linkText: { textDecorationLine: 'underline', fontWeight: '600', color: c.primary },
 
-  legal: { fontSize: 12, opacity: 0.6, marginTop: 16, textAlign: 'center' },
+    legal: { fontSize: 12, opacity: 0.7, marginTop: 16, textAlign: 'center', color: c.text },
 
-  footer: { marginTop: 18, alignItems: 'center' },
-  footerText: { fontSize: 12, opacity: 0.6 },
+    footer: { marginTop: 18, alignItems: 'center' },
+    footerText: { fontSize: 12, opacity: 0.6, color: c.text },
 
-  blobWrap: { position: 'absolute', inset: 0 },
-  logo: { width: 124, height: 124, marginBottom: 10 },
-  blob: {
-    position: 'absolute',
-    width: 220,
-    height: 220,
-    borderRadius: 9999,
-    transform: [{ rotate: '20deg' }],
-    // filter (CSS) solo aplica en web.
-  },
-});
+    blobWrap: { position: 'absolute', inset: 0 },
+    logo: { width: 124, height: 124, marginBottom: 10 },
+    blob: {
+      position: 'absolute',
+      width: 220,
+      height: 220,
+      borderRadius: 9999,
+      transform: [{ rotate: '20deg' }],
+    },
+  });
+}

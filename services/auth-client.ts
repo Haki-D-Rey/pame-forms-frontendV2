@@ -1,11 +1,10 @@
-// src/services/auth.client.ts
-const API_BASE = process.env.EXPO_PUBLIC_API_BASE_URL ?? '';
-// ejemplo: "https://tu-backend.com" (sin la barra final)
+/* eslint-disable import/no-unresolved */
+import { API_BASE_URL } from "@/lib/config";
 
 type Json = Record<string, any>;
 
 async function postJSON<T = any>(path: string, body: Json, init?: RequestInit): Promise<T> {
-    const res = await fetch(`${API_BASE}${path}`, {
+    const res = await fetch(`${API_BASE_URL}${path}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(init?.headers ?? {}) },
         body: JSON.stringify(body),
@@ -25,6 +24,7 @@ async function postJSON<T = any>(path: string, body: Json, init?: RequestInit): 
 
 /** 1) Enviar código de recuperación al email */
 export async function requestPasswordReset(email: string) {
+    console.log(email);
     return postJSON<{ message: string }>(`/api/v1/auth/forgot-password`, { email });
 }
 
