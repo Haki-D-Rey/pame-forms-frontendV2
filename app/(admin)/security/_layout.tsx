@@ -18,7 +18,9 @@ export default function SecurityLayout() {
         <Stack.Screen name="users/index" />
         <Stack.Screen name="users/new" />
         <Stack.Screen name="users/[id]" />
-        <Stack.Screen name="roles" />
+        <Stack.Screen name="roles/index" />
+        <Stack.Screen name="roles/new" />
+        <Stack.Screen name="roles/[id]" />
         <Stack.Screen name="permissions" />
       </Stack>
     </SafeAreaView>
