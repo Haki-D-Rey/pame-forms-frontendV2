@@ -73,14 +73,12 @@ export default function AdminShell({ children }: Props) {
   const fieldBorder = useThemeColor({}, 'fieldBorder');
   const tint = useThemeColor({}, 'tint');
 
+  // Sólo para StatusBar (puedes cambiarlo a un token si prefieres)
   const scheme = useColorScheme();
   const isDark = scheme === 'dark';
 
   const styles = useMemo(
-    () =>
-      createStyles({
-        text, bg, primary, muted, surface, border, fieldBg, fieldBorder, tint,
-      }),
+    () => createStyles({ text, bg, primary, muted, surface, border, fieldBg, fieldBorder, tint }),
     [text, bg, primary, muted, surface, border, fieldBg, fieldBorder, tint]
   );
 
@@ -216,7 +214,11 @@ export default function AdminShell({ children }: Props) {
         </Pressable>
 
         <View style={styles.brandWrap}>
-          <Image source={require('@/assets/images/pame-logo-t.png')} style={{ width: 22, height: 22, marginRight: 8 }} resizeMode="contain" />
+          <Image
+            source={require('@/assets/images/pame-logo-t.png')}
+            style={{ width: 22, height: 22, marginRight: 8 }}
+            resizeMode="contain"
+          />
           <Text style={[styles.brand, { color: text }]}>Pame Admin</Text>
         </View>
 
@@ -264,7 +266,7 @@ export default function AdminShell({ children }: Props) {
         >
           <View style={{ flex: 1, minHeight: 0 }}>
             <SidebarContent
-              tokens={{ text, tint, primary, muted, border, fieldBg }}
+              tokens={{ text, tint, primary, muted, border, fieldBg, surface }}
               isActive={isActive}
               onNavigate={navigateFromMenu}
               userEmail={user?.email}
@@ -273,6 +275,7 @@ export default function AdminShell({ children }: Props) {
                 await signOut();
                 router.replace('/(auth)/auth/login' as const);
               }}
+              stylesGlobal={styles}
             />
           </View>
         </View>
@@ -307,7 +310,11 @@ export default function AdminShell({ children }: Props) {
             <View style={{ flex: 1, minHeight: 0 }}>
               <View style={[styles.drawerHeader, { flexShrink: 0, borderBottomColor: border }]}>
                 <View style={styles.logoRow}>
-                  <Image source={require('@/assets/images/pame-logo-t.png')} style={{ width: 22, height: 22, marginRight: 8 }} resizeMode="contain" />
+                  <Image
+                    source={require('@/assets/images/pame-logo-t.png')}
+                    style={{ width: 22, height: 22, marginRight: 8 }}
+                    resizeMode="contain"
+                  />
                   <Text style={[styles.sidebarTitle, { color: text }]}>Pame Admin</Text>
                 </View>
                 <Pressable onPress={() => hideSidebar()} style={styles.iconBtn} accessibilityRole="button" {...ripple(`${text}12`)}>
@@ -317,7 +324,7 @@ export default function AdminShell({ children }: Props) {
 
               <View style={{ flex: 1, minHeight: 0 }}>
                 <SidebarContent
-                  tokens={{ text, tint, primary, muted, border, fieldBg }}
+                  tokens={{ text, tint, primary, muted, border, fieldBg, surface }}
                   isActive={isActive}
                   onNavigate={navigateFromMenu}
                   userEmail={user?.email}
@@ -355,24 +362,25 @@ function SidebarContent({
   userEmail,
   onSignOut,
   ripple,
-  stylesGlobal
+  stylesGlobal,
 }: {
-  tokens: { text: string; tint: string; primary: string; muted: string; border: string; fieldBg: string };
+  tokens: {
+    text: string; tint: string; primary: string; muted: string;
+    border: string; fieldBg: string; surface: string;
+  };
   isActive: (href: string) => boolean;
   onNavigate: (href: string) => void;
   userEmail?: string | null;
   onSignOut: () => Promise<void>;
   ripple: (c: string) => any;
-  stylesGlobal?: any
+  stylesGlobal?: ReturnType<typeof createStyles>;
 }) {
-  const { text, tint, primary, muted, border, fieldBg } = tokens;
-  const styles = stylesGlobal;
-  const scheme = useColorScheme();
-  const isDark = scheme === 'dark';
+  const { text, tint, primary, muted, border, fieldBg, surface } = tokens;
+  const styles = stylesGlobal ?? createStyles({ text, bg: surface, primary, muted, surface, border, fieldBg, fieldBorder: border, tint });
 
-  // Ajuste: en light forzamos fondos claros para secciones e ítems
-  const sectionBg = isDark ? fieldBg : '#FFFFFF';
-  const itemBg = isDark ? fieldBg : '#FFFFFF';
+  // Fondos derivados SOLO de tokens (no useColorScheme), para que sigan el tema activo de la app
+  const sectionBg = surface;
+  const itemBg = surface;
 
   const avatarLetter = useMemo(() => (userEmail ? userEmail[0].toUpperCase() : 'U'), [userEmail]);
   const initialExpanded = useMemo(
@@ -443,6 +451,7 @@ function SidebarContent({
         })}
       </ScrollView>
 
+      {/* Footer */}
       <View style={[styles.sidebarFooter, { borderTopColor: border, paddingVertical: 10 }]}>
         {/* Izquierda: Avatar + info */}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }}>
@@ -451,7 +460,7 @@ function SidebarContent({
           </View>
           <View style={{ flex: 1, minWidth: 0 }}>
             <Text style={{ fontSize: 12, color: text }} numberOfLines={1} ellipsizeMode="tail">
-              {userEmail ?? 'user@example.com'}
+              {userEmail ?? 'user@hospitalmilitar.com.ni'}
             </Text>
             <Text style={{ fontSize: 11, color: muted }} numberOfLines={1} ellipsizeMode="tail">
               Sesión activa
@@ -482,12 +491,9 @@ function SidebarContent({
           <MaterialCommunityIcons name="logout-variant" size={16} color="#ef4444" />
         </Pressable>
       </View>
-
-
     </View>
   );
 }
-
 
 function createStyles(c: {
   text: string; bg: string; primary: string; muted: string; surface: string; border: string; fieldBg: string; fieldBorder: string; tint: string;
@@ -574,6 +580,7 @@ function createStyles(c: {
     sidebarTitle: { fontSize: 15, fontWeight: '800' },
 
     sidebarContentWrap: { flex: 1, minHeight: 0 },
+
     navItem: {
       height: 46, minHeight: 46, maxHeight: 46,
       position: 'relative',
@@ -586,6 +593,7 @@ function createStyles(c: {
     },
     iconCell: { width: 28, alignItems: 'center', justifyContent: 'center', marginRight: 8 },
     navLabel: { fontSize: 15, fontWeight: '600' },
+
     sidebarFooter: {
       paddingHorizontal: 12, paddingVertical: 12,
       borderTopWidth: StyleSheet.hairlineWidth, flexDirection: 'row', alignItems: 'center',

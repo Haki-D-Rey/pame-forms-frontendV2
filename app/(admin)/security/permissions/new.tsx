@@ -1,5 +1,4 @@
-// app/(admin)/security/roles/[id].tsx
-import RoleForm from '@/components/roles/role-form';
+import PermissionForm from '@/components/permissions/permission-form';
 import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -7,7 +6,7 @@ import { useRouter } from 'expo-router';
 import React from 'react';
 import { Alert, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
-export default function CreateRoleScreen() {
+export default function CreatePermissionScreen() {
     const router = useRouter();
 
     // tokens
@@ -40,16 +39,16 @@ export default function CreateRoleScreen() {
                         <MaterialCommunityIcons name="arrow-left" size={18} color={text} />
                     </Pressable>
 
-                    <ThemedText type="title">Nuevo Rol </ThemedText>
+                    <ThemedText type="title">Nuevo Permiso</ThemedText>
                 </View>
             </View>
 
-            <RoleForm
+            <PermissionForm
                 mode="create"
-                roleId={undefined}
+                permissionId={undefined}
                 onSuccess={() => {
-                    Alert.alert('Éxito', 'Rol Creado', [
-                        { text: 'OK', onPress: () => router.replace('/(admin)/security/roles') },
+                    Alert.alert('Éxito', 'Permiso creado correctamente', [
+                        { text: 'OK', onPress: () => router.replace('/(admin)/security/permissions') },
                     ]);
                 }}
             />

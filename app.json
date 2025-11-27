@@ -16,7 +16,6 @@
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/pame-logo-t.png",
-        "backgroundImage": "./assets/images/pame-logo-t.png",
         "monochromeImage": "./assets/images/pame-logo-t.png"
       },
       "edgeToEdgeEnabled": true,
@@ -32,7 +31,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/images/pame-logo-t.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
@@ -47,6 +46,7 @@
       "reactCompiler": true
     },
     "extra": {
+      "EXPO_PUBLIC_API_BASE_URL": "https://pameforms.hmil.com.ni",
       "router": {},
       "eas": {
         "projectId": "6e5795ef-e243-4859-97fc-7f7cb738fdd7"

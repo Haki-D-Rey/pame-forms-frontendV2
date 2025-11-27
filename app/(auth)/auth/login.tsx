@@ -5,6 +5,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useThemeColor } from '@/hooks/use-theme-color';
+import { API_BASE_URL } from '@/lib/config';
 import { useAuth } from '@/providers/auth';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -36,18 +37,18 @@ export default function LoginScreen() {
   const { signIn } = useAuth();
 
   // === Tokens de tema centralizados ===
-  const text        = useThemeColor({}, 'text');
-  const bg          = useThemeColor({}, 'background');
-  const primary     = useThemeColor({}, 'primary');
-  const muted       = useThemeColor({}, 'muted');
-  const surface     = useThemeColor({}, 'surface');
-  const border      = useThemeColor({}, 'border');
-  const fieldBg     = useThemeColor({}, 'fieldBg');
+  const text = useThemeColor({}, 'text');
+  const bg = useThemeColor({}, 'background');
+  const primary = useThemeColor({}, 'primary');
+  const muted = useThemeColor({}, 'muted');
+  const surface = useThemeColor({}, 'surface');
+  const border = useThemeColor({}, 'border');
+  const fieldBg = useThemeColor({}, 'fieldBg');
   const fieldBorder = useThemeColor({}, 'fieldBorder');
   const placeholder = useThemeColor({}, 'placeholder');
-  const errorColor  = useThemeColor({}, 'error');
-  const disabled    = useThemeColor({}, 'disabled');
-  const tint        = useThemeColor({}, 'tint');
+  const errorColor = useThemeColor({}, 'error');
+  const disabled = useThemeColor({}, 'disabled');
+  const tint = useThemeColor({}, 'tint');
 
   const scheme = useColorScheme();
   const logoSource =
@@ -181,10 +182,11 @@ export default function LoginScreen() {
       await awaitAlert({
         type: 'error',
         title: 'Credenciales Incorrectas',
-        message: 'No se pudo iniciar sesión. Verifica tus credenciales e intenta nuevamente',
+        message: API_BASE_URL + ' - No se pudo iniciar sesión. Verifica tus credenciales e intenta nuevamente',
         duration: 2000,
         logo: require('@/assets/images/pame-logo-t.png'),
       });
+      console.log(API_BASE_URL)
     }
   };
 

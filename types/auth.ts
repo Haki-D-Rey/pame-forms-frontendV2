@@ -75,3 +75,5 @@ export type RoleSafeDTO = {
     updatedAt?: Date; // null -> undefined en el mapeo
 };
 
+export type PermissionSafeDTO = RoleSafeDTO;
+
